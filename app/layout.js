@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Progressive Web App",
-  description: "Offline Kanban",
+  title: "Offline Kanban",
+  description: "An offline-first Kanban board built with Next.js, designed for reliable task management with and without internet connectivity."
 };
 
 export default function RootLayout({ children }) {
