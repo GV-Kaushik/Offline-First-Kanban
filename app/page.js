@@ -35,12 +35,10 @@ export default function Home() {
 
   return (
     <div className="p-6">
-      {/* BIG TITLE */}
       <h1 className="text-4xl font-bold text-center mb-6">
         Kanban Board
       </h1>
 
-      {/* ADD TASK */}
       <div className="mb-6 flex justify-center gap-2">
         <input
           type="text"
@@ -56,8 +54,6 @@ export default function Home() {
           Add Task
         </button>
       </div>
-
-      {/* BOARD */}
       <div className="grid grid-cols-3 gap-4">
         <Column title="TODO" status="todo" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
         <Column title="IN PROGRESS" status="in progress" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />

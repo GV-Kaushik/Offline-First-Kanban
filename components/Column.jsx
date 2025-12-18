@@ -8,8 +8,6 @@ const Column = ({ title, status, tasks, moveTask, deleteTask }) => {
       <h2 className="text-lg font-semibold mb-3 text-center">
         {title}
       </h2>
-
-      {/* Scrollable area */}
       <div className="space-y-2 overflow-y-auto flex-1 pr-1">
         {filteredTasks.map(task => (
           <Cards
