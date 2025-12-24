@@ -1,10 +1,25 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Column from "../components/Column";
+import { saveTasks, loadTasks } from "../lib/db.js";
 
 export default function Home() {
   const [tasks, setTasks] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
+
+  // Load tasks from IndexedDB on first load
+  useEffect(() => {
+    async function fetchTasks() {
+      const storedTasks = await loadTasks();
+      setTasks(storedTasks);
+    }
+    fetchTasks();
+  }, []);
+
+  // Save tasks to IndexedDB whenever tasks change
+  useEffect(() => {
+    saveTasks(tasks);
+  }, [tasks]);
 
   function addTask() {
     if (taskTitle.trim() === "") return;
@@ -35,10 +50,12 @@ export default function Home() {
 
   return (
     <div className="p-6">
+      {/* BIG TITLE */}
       <h1 className="text-4xl font-bold text-center mb-6">
         Kanban Board
       </h1>
 
+      {/* ADD TASK */}
       <div className="mb-6 flex justify-center gap-2">
         <input
           type="text"
@@ -54,10 +71,30 @@ export default function Home() {
           Add Task
         </button>
       </div>
+
+      {/* BOARD */}
       <div className="grid grid-cols-3 gap-4">
-        <Column title="TODO" status="todo" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
-        <Column title="IN PROGRESS" status="in progress" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
-        <Column title="DONE" status="done" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
+        <Column
+          title="TODO"
+          status="todo"
+          tasks={tasks}
+          moveTask={moveTask}
+          deleteTask={deleteTask}
+        />
+        <Column
+          title="IN PROGRESS"
+          status="in progress"
+          tasks={tasks}
+          moveTask={moveTask}
+          deleteTask={deleteTask}
+        />
+        <Column
+          title="DONE"
+          status="done"
+          tasks={tasks}
+          moveTask={moveTask}
+          deleteTask={deleteTask}
+        />
       </div>
     </div>
   );
