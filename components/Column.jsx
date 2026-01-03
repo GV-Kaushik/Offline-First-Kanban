@@ -1,11 +1,10 @@
-"use client";
 import Cards from "./Cards";
 
 const Column = ({ title, status, tasks, moveTask, deleteTask }) => {
   const filteredTasks = tasks.filter(task => task.status === status);
 
   return (
-    <div className="bg-gray-200 rounded-md p-3 h-[85vh] flex flex-col shadow">
+    <div className="bg-gray-200 rounded-md p-3 h-[85vh] flex flex-col">
       <h2 className="text-lg font-semibold mb-3 text-center">
         {title}
       </h2>
