@@ -1,3 +1,4 @@
+"use client";
 import Cards from "./Cards";
 
 const Column = ({ title, status, tasks, moveTask, deleteTask }) => {
