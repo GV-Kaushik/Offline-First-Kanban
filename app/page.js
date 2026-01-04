@@ -1,44 +1,58 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Column from "../components/Column";
 import { saveTasks, loadTasks } from "../lib/db";
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
-  const [online, setOnline] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
+    async function fetchTasks() {
+      const storedTasks = await loadTasks();
+      setTasks(storedTasks);
+    }
+    fetchTasks();
+  }, []);
 
-    const updateStatus = () => setOnline(navigator.onLine);
-    updateStatus();
+  useEffect(() => {
+    saveTasks(tasks);
+  }, [tasks]);
 
-    window.addEventListener("online", updateStatus);
-    window.addEventListener("offline", updateStatus);
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+
+    function handleOnline() {
+      setIsOnline(true);
+      syncToServer(tasks);
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener("online", updateStatus);
-      window.removeEventListener("offline", updateStatus);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, []);
-
- 
-  useEffect(() => {
-    loadTasks().then(setTasks);
-  }, []);
+  }, [tasks]);
 
 
   useEffect(() => {
-    if (mounted) saveTasks(tasks);
-  }, [tasks, mounted]);
-
-  if (!mounted) return null; 
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch(err => console.error("SW registration failed", err));
+    }
+  }, []);
 
   function addTask() {
-    if (!taskTitle.trim()) return;
+    if (taskTitle.trim() === "") return;
 
     setTasks(prev => [
       ...prev,
@@ -64,67 +78,56 @@ export default function Home() {
     setTasks(prev => prev.filter(task => task.id !== id));
   }
 
+  async function syncToServer(tasks) {
+    if (!navigator.onLine) return;
+
+    try {
+      await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tasks),
+      });
+
+      console.log("Tasks synced to server");
+    } catch (error) {
+      console.error("Failed to sync tasks", error);
+    }
+  }
+
   return (
-    <div className="min-h-screen p-6 bg-gray-100 dark:bg-gray-900">
-      <h1 className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white">
+    <div className="p-6">
+      <h1 className="text-4xl font-bold text-center mb-2">
         Kanban Board
       </h1>
 
-      {online !== null && (
-        <p className="text-center mb-4">
-          <span
-            className={`inline-flex items-center gap-2 font-medium ${
-              online ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            ● {online ? "Online" : "Offline"}
-          </span>
-        </p>
-      )}
+      <p
+        className={`text-center mb-4 font-semibold ${
+          isOnline ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {isOnline ? "🟢 Online" : "🔴 Offline"}
+      </p>
 
-  
-      <div className="flex justify-center gap-2 mb-6">
+      <div className="mb-6 flex justify-center gap-2">
         <input
+          type="text"
           value={taskTitle}
           onChange={e => setTaskTitle(e.target.value)}
           placeholder="Enter task..."
-          className="
-            w-72 px-3 py-2 rounded-md border
-            bg-white text-black
-            dark:bg-gray-800 dark:text-white dark:border-gray-700
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-          "
+          className="border p-2 rounded w-64"
         />
         <button
           onClick={addTask}
-          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Add Task
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Column
-          title="TODO"
-          status="todo"
-          tasks={tasks}
-          moveTask={moveTask}
-          deleteTask={deleteTask}
-        />
-        <Column
-          title="IN PROGRESS"
-          status="in-progress"
-          tasks={tasks}
-          moveTask={moveTask}
-          deleteTask={deleteTask}
-        />
-        <Column
-          title="DONE"
-          status="done"
-          tasks={tasks}
-          moveTask={moveTask}
-          deleteTask={deleteTask}
-        />
+      <div className="grid grid-cols-3 gap-4">
+        <Column title="TODO" status="todo" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
+        <Column title="IN PROGRESS" status="in progress" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
+        <Column title="DONE" status="done" tasks={tasks} moveTask={moveTask} deleteTask={deleteTask} />
       </div>
     </div>
   );
