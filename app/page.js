@@ -5,12 +5,13 @@ import Column from "../components/Column";
 import { saveTasks, loadTasks } from "../lib/db";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(null);
 
   useEffect(() => {
-    loadTasks().then(setTasks);
+    setMounted(true);
 
     const updateStatus = () => setOnline(navigator.onLine);
     updateStatus();
@@ -24,9 +25,17 @@ export default function Home() {
     };
   }, []);
 
+ 
   useEffect(() => {
-    saveTasks(tasks);
-  }, [tasks]);
+    loadTasks().then(setTasks);
+  }, []);
+
+
+  useEffect(() => {
+    if (mounted) saveTasks(tasks);
+  }, [tasks, mounted]);
+
+  if (!mounted) return null; 
 
   function addTask() {
     if (!taskTitle.trim()) return;
@@ -39,47 +48,52 @@ export default function Home() {
         status: "todo",
       },
     ]);
+
     setTaskTitle("");
   }
 
-  function moveTask(id, status) {
+  function moveTask(id, newStatus) {
     setTasks(prev =>
-      prev.map(t => (t.id === id ? { ...t, status } : t))
+      prev.map(task =>
+        task.id === id ? { ...task, status: newStatus } : task
+      )
     );
   }
 
   function deleteTask(id) {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    setTasks(prev => prev.filter(task => task.id !== id));
   }
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header */}
-      <h1 className="text-3xl font-bold text-center mb-2">
+    <div className="min-h-screen p-6 bg-gray-100 dark:bg-gray-900">
+      <h1 className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white">
         Kanban Board
       </h1>
 
-      <p className="text-center mb-4">
-        <span
-          className={`inline-flex items-center gap-2 font-medium ${
-            online ? "text-green-500" : "text-red-500"
-          }`}
-        >
-          ● {online ? "Online" : "Offline"}
-        </span>
-      </p>
+      {online !== null && (
+        <p className="text-center mb-4">
+          <span
+            className={`inline-flex items-center gap-2 font-medium ${
+              online ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            ● {online ? "Online" : "Offline"}
+          </span>
+        </p>
+      )}
 
-      {/* Input */}
+  
       <div className="flex justify-center gap-2 mb-6">
         <input
           value={taskTitle}
           onChange={e => setTaskTitle(e.target.value)}
           placeholder="Enter task..."
-          className="w-72 px-3 py-2 rounded-md border
-                     bg-white text-black
-                     dark:bg-gray-800 dark:text-white
-                     dark:border-gray-700
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 "
+          className="
+            w-72 px-3 py-2 rounded-md border
+            bg-white text-black
+            dark:bg-gray-800 dark:text-white dark:border-gray-700
+            focus:outline-none focus:ring-2 focus:ring-blue-500
+          "
         />
         <button
           onClick={addTask}
@@ -89,7 +103,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Board */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Column
           title="TODO"
@@ -100,7 +113,7 @@ export default function Home() {
         />
         <Column
           title="IN PROGRESS"
-          status="progress"
+          status="in-progress"
           tasks={tasks}
           moveTask={moveTask}
           deleteTask={deleteTask}
